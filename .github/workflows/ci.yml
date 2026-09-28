@@ -33,15 +33,19 @@ jobs:
     needs: [test, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Wait for Railway auto-deploy
         run: |
-          npm i -g @railway/cli
-          railway up --service agent
+          for i in $(seq 1 20); do
+            if curl -fsS "${{ vars.PUBLIC_URL }}/health"; then
+              echo "service is up"; break
+            fi
+            echo "waiting for deploy... ($i/20)"; sleep 30
+          done
       - name: Smoke test
         run: |
-          sleep 45
           curl -fsS "${{ vars.PUBLIC_URL }}/health"
+          curl -fsS "${{ vars.PUBLIC_URL }}/ready"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST "${{ vars.PUBLIC_URL }}/ask" -H 'Content-Type: application/json' -d '{"question":"Hello"}')" = "401"

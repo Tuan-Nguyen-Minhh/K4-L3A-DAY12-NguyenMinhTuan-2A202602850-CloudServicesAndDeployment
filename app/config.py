@@ -13,6 +13,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    port: int = 8000
+    agent_api_key : str
+    redis_url : str = "redis://localhost:6379/0"
+    rate_limit_per_minute : int = 10
+    monthly_budget_usd : float = 10.0
+    log_level : str = "INFO"
     """Toàn bộ cấu hình của service.
 
     TODO (CP1): khai báo các trường dưới đây. pydantic-settings tự đọc biến
